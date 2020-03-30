@@ -35,13 +35,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/ElliotNB/observable-slim.git"
+    "url": "https://github.com/noamlin/observable-slim.git"
   },
   "license": "MIT",
   "author": "ElliotNB",
   "homepage": "https://github.com/ElliotNB/observable-slim",
   "bugs": {
-    "url": "https://github.com/ElliotNB/observable-slim/issues"
+    "url": "https://github.com/noamlin/observable-slim/issues"
   },
   "dependencies": {}
 }
