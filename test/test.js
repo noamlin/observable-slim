@@ -713,7 +713,7 @@ function suite(proxy) {
 		
 		setTimeout(function() {
 			p.blah.dupe.duplicate = "should catch this change";
-		}, 500);
+		}, 2500);//library has 2000ms timeout to detach proxies internally so it will stall the garbage collector
 	
 	});
 

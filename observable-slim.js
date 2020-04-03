@@ -445,7 +445,7 @@ var ObservableSlim = (function() {
 
 									})(targetProp)
 								}
-							},10000);
+							},2000);
 						}
 
 						// TO DO: the next block of code resolves test case #29, but it results in poor IE11 performance with very large objects.

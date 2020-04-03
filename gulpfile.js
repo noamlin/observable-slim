@@ -1,14 +1,11 @@
 var gulp = require('gulp');
 var uglify = require('gulp-uglify-es').default;
-var gulpIf = require('gulp-if');
 var useref = require('gulp-useref');
 var rename = require('gulp-rename');
 var mocha = require('gulp-mocha');
-var chai = require('chai');
 var babel = require('gulp-babel');
 var eslint = require('gulp-eslint');
 var istanbul = require('gulp-istanbul');
-var gutil = require('gulp-util');
 
 gulp.task('default', function(){
 	return gulp.src(['observable-slim.js','proxy.js'])
@@ -34,12 +31,12 @@ gulp.task('pre-test', function () {
 	.pipe(istanbul.hookRequire());
 });
 
-gulp.task('test', ['pre-test'], function() {
+gulp.task('test', gulp.series('pre-test', function() {
 	return gulp.src(['test/test.js'])
 	.pipe(mocha({compilers:babel}))
 	// Creating the reports after tests ran
     .pipe(istanbul.writeReports());
-});
+}));
 
 gulp.task('lint', function() {
 	return gulp.src(['observable-slim.js','proxy.js','test/test.js'])
