@@ -109,31 +109,27 @@ var ObservableSlim = (function() {
 		var notifyObserversTimeout = -1;
 		var _notifyObservers = function() {
 			// if the observable is paused, then we don't want to execute any of the observer functions
-			if (observable.paused === true) return;
+			if (observable.stopped === true || observable.paused === true) return;
 
-			// execute observer functions on a 10ms settimeout, this prevents the observer functions from being executed
-			// separately on every change -- this is necessary because the observer functions will often trigger UI updates
- 			if (domDelay === true) {
-				clearTimeout(notifyObserversTimeout);
-				notifyObserversTimeout = setTimeout(function() {
-					// we create a copy of changes before passing it to the observer functions because even if the observer function
-					// throws an error, we still need to ensure that changes is reset to an empty array so that old changes don't persist
-					var changesCopy = changes.slice(0);
-					changes = [];
-
-					// invoke any functions that are observing changes
-					for (var i = 0; i < observable.observers.length; i++) observable.observers[i](changesCopy);
-				}, 10);
-			} else {
-
+			let executeNotify = function() {
 				// we create a copy of changes before passing it to the observer functions because even if the observer function
 				// throws an error, we still need to ensure that changes is reset to an empty array so that old changes don't persist
 				var changesCopy = changes.slice(0);
 				changes = [];
 
 				// invoke any functions that are observing changes
-				for (var i = 0; i < observable.observers.length; i++) observable.observers[i](changesCopy);
+				for (var i = 0; i < observable.observers.length; i++) {
+					observable.observers[i](changesCopy);
+				}
+			}
 
+			// execute observer functions on a 10ms settimeout, this prevents the observer functions from being executed
+			// separately on every change -- this is necessary because the observer functions will often trigger UI updates
+ 			if (domDelay === true) {
+				clearTimeout(notifyObserversTimeout);
+				notifyObserversTimeout = setTimeout(executeNotify, 10);
+			} else {
+				executeNotify();
 			}
 		};
 
@@ -217,16 +213,18 @@ var ObservableSlim = (function() {
 				var previousValue = Object.assign({}, target);
 
 				// record the deletion that just took place
-				changes.push({
-					"type":"delete"
-					,"target":target
-					,"property":property
-					,"newValue":null
-					,"previousValue":previousValue[property]
-					,"currentPath":_getPath(target, property)
-					,"jsonPointer":_getPath(target, property, true)
-					,"proxy":proxy
-				});
+				if(!observable.stopped) {
+					changes.push({
+						"type":"delete"
+						,"target":target
+						,"property":property
+						,"newValue":null
+						,"previousValue":previousValue[property]
+						,"currentPath":_getPath(target, property)
+						,"jsonPointer":_getPath(target, property, true)
+						,"proxy":proxy
+					});
+				}
 
 				if (originalChange === true) {
 
@@ -294,22 +292,24 @@ var ObservableSlim = (function() {
 					if (typeOfTargetProp === "undefined") type = "add";
 
 					// store the change that just occurred. it is important that we store the change before invoking the other proxies so that the previousValue is correct
-					changes.push({
-						"type":type
-						,"target":target
-						,"property":property
-						,"newValue":value
-						,"previousValue":receiver[property]
-						,"currentPath":_getPath(target, property)
-						,"jsonPointer":_getPath(target, property, true)
-						,"proxy":proxy
-					});
-					
-					// mutations of arrays via .push or .splice actually modify the .length before the set handler is invoked
-					// so in order to accurately report the correct previousValue for the .length, we have to use a helper property.
-					if (property === "length" && target instanceof Array && target.__length !== value) {
-						changes[changes.length-1].previousValue = target.__length;
-						target.__length = value;
+					if(!observable.stopped) {
+						changes.push({
+							"type":type
+							,"target":target
+							,"property":property
+							,"newValue":value
+							,"previousValue":receiver[property]
+							,"currentPath":_getPath(target, property)
+							,"jsonPointer":_getPath(target, property, true)
+							,"proxy":proxy
+						});
+						
+						// mutations of arrays via .push or .splice actually modify the .length before the set handler is invoked
+						// so in order to accurately report the correct previousValue for the .length, we have to use a helper property.
+						if (property === "length" && target instanceof Array && target.__length !== value) {
+							changes[changes.length-1].previousValue = target.__length;
+							target.__length = value;
+						}
 					}
 
 					// !!IMPORTANT!! if this proxy was the first proxy to receive the change, then we need to go check and see
@@ -492,7 +492,7 @@ var ObservableSlim = (function() {
 
 		// we don't want to create a new observable if this function was invoked recursively
 		if (observable === null) {
-			observable = {"parentTarget":target, "domDelay":domDelay, "parentProxy":proxy, "observers":[],"paused":false,"path":path,"changesPaused":false};
+			observable = {"parentTarget":target, "domDelay":domDelay, "parentProxy":proxy, "observers":[],"stopped":false,"paused":false,"path":path,"changesPaused":false};
 			observables.push(observable);
 		}
 
@@ -608,6 +608,24 @@ var ObservableSlim = (function() {
 			if (foundMatch == false) throw new Error("ObseravableSlim could not pause observable -- matching proxy not found.");
 		},
 
+		/**
+		 * completely stop the execution of observer functions and the recording of changes
+		 * @param {Proxy Object} proxy 
+		 */
+		stop: function(proxy) {
+			var i = observables.length;
+			var foundMatch = false;
+			while (i--) {
+				if (observables[i].parentProxy === proxy) {
+					observables[i].stopped = true;
+					foundMatch = true;
+					break;
+				}
+			};
+
+			if (foundMatch == false) throw new Error("ObseravableSlim could not stop observable -- matching proxy not found.");
+		},
+
 		/*	Method: resume
 				This method will resume execution of any observer functions when a change is made to a proxy.
 
@@ -620,6 +638,7 @@ var ObservableSlim = (function() {
 			while (i--) {
 				if (observables[i].parentProxy === proxy) {
 					observables[i].paused = false;
+					observables[i].stopped = false;
 					foundMatch = true;
 					break;
 				}

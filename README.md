@@ -121,8 +121,16 @@ ObservableSlim.observe(proxy, function(changes) {
 ### Pause observers
 
 If you wish to pause the execution of observer functions, you may do so as follows:
+(changes still accumulate in the background. observer functions will execute once you resume)
 ```javascript
 ObservableSlim.pause(proxy);
+```
+
+### Stop observers
+
+If you wish to stop the execution of observer functions and the recording of changes, you may do so as follows:
+```javascript
+ObservableSlim.stop(proxy);
 ```
 
 ### Resume observers

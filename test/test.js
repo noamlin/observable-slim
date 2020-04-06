@@ -618,30 +618,65 @@ function suite(proxy) {
 	
 	it('31. Pause and resume observables.', () => {
 	
-		var changeCount = 0;
+		var changesCount = 0;
+		var triggerCount = 0;
 		var data = {"testing":{"test":{"testb":"hello world"},"testc":"hello again"},"blah":{"tree":"world"}};
-		var p = ObservableSlim.create(data, false, function(changes) { changeCount++; });
+		var p = ObservableSlim.create(data, false, function(changes) {
+			changesCount += changes.length;
+			triggerCount++;
+		});
 		
 		// try resuming an object that's not a proxy, it should throw an error
 		assert(function() { ObservableSlim.pause({}); }, Error, "ObseravableSlim could not pause observable -- matching proxy not found.");
 		
 		ObservableSlim.pause(p);
 		
-		p.testing.test.testb = "HELLO WORLD";
+		p.testing.test.testb = "HELLO WORLD 1";
+		p.testing.test.testb = "HELLO WORLD 2";
 		
 		// try resuming an object that's not a proxy, it should throw an error
 		assert(function() { ObservableSlim.resume({}); }, Error, "ObseravableSlim could not resume observable -- matching proxy not found.");
 		
 		ObservableSlim.resume(p);
 		
-		p.testing.test.testb = "HELLO WORLD2";
+		p.testing.test.testb = "HELLO WORLD 3";
 		
-		expect(changeCount).to.equal(1);
+		expect(changesCount).to.equal(3);
+		expect(triggerCount).to.equal(1);
 	
+	});
+	
+	
+	it('32. Stop and resume observables.', () => {
+		var changesCount = 0;
+		var triggerCount = 0;
+		var data = {"testing":{"test":{"testb":"hello world"},"testc":"hello again"},"blah":{"tree":"world"}};
+		var p = ObservableSlim.create(data, false, function(changes) {
+			changesCount += changes.length;
+			triggerCount++;
+		});
+		
+		// try resuming an object that's not a proxy, it should throw an error
+		assert(function() { ObservableSlim.stop({}); }, Error, "ObseravableSlim could not pause observable -- matching proxy not found.");
+		
+		ObservableSlim.stop(p);
+		
+		p.testing.test.testb = "HELLO WORLD 1";
+		p.testing.test.testb = "HELLO WORLD 2";
+		
+		// try resuming an object that's not a proxy, it should throw an error
+		assert(function() { ObservableSlim.resume({}); }, Error, "ObseravableSlim could not resume observable -- matching proxy not found.");
+		
+		ObservableSlim.resume(p);
+		
+		p.testing.test.testb = "HELLO WORLD 3";
+		
+		expect(changesCount).to.equal(1);
+		expect(triggerCount).to.equal(1);
 	});
 
 
-	it('32. Pause and resume changes on observables', () => {
+	it('33. Pause changes and resume changes on observables', () => {
 
 		var changeCount = 0;
 		var data = {"testing":{"test":{"testb":"hello world"},"testc":"hello again"},"blah":{"tree":"world"}};
@@ -667,7 +702,7 @@ function suite(proxy) {
 
 	});
 	
-	it('33. Verify that a mutation on an object observed by two handlers returns the correct new value in both handlers.', () => {
+	it('34. Verify that a mutation on an object observed by two handlers returns the correct new value in both handlers.', () => {
 		
 		var data = {"foo":"bar"};
 		var p = ObservableSlim.create(data, false, function(changes) { 
@@ -687,7 +722,7 @@ function suite(proxy) {
 	// However, if a reference to the overwritten object exists somewhere else on the parent observed object, then we
 	// still need to watch/observe that object for changes. This test verifies that even after the clean-up process (10 second delay)
 	// changes to an overwritten object are still monitored as long as there's another reference to the object.
- 	it('34. Clean-up observers of overwritten (orphaned) objects.', (done) => {
+ 	it('35. Clean-up observers of overwritten (orphaned) objects.', (done) => {
 
 		var data = {"testing":{"test":{"testb":"hello world"},"testc":"hello again"},"blah":{"tree":"world"}};
 		var dupe = {"duplicate":"is duplicated"};
@@ -717,14 +752,14 @@ function suite(proxy) {
 	
 	});
 
-	it('35. JSON.stringify does not fail on proxied date.', () => {
+	it('36. JSON.stringify does not fail on proxied date.', () => {
 		var test = {d: new Date()};
 		var p = ObservableSlim.create(test, false, function () {});
 		
 		JSON.stringify(p);
 	});
 
-	it('36. valueOf does not fail on proxied date.', () => {
+	it('37. valueOf does not fail on proxied date.', () => {
 		var test = {d: new Date()};
 		var p = ObservableSlim.create(test, false, function () {});
 
@@ -733,7 +768,7 @@ function suite(proxy) {
 	
 	// ObservableSlim.remove works great on native
 	// but the test (that should fail) does not fail on the polyfill
-	it.skip('37. Delete property after calling ObservableSlim.remove should fail.', () => {
+	it.skip('38. Delete property after calling ObservableSlim.remove should fail.', () => {
 		var test = { foo: 'foo', bar:[0,1,2] };
 		var p = ObservableSlim.create(test, false, function () {});
 		
@@ -751,21 +786,21 @@ function suite(proxy) {
 		expect(fail2).to.equal(true);
 	});
 
-	it('38. Proxied Date.toString outputs the pristine Date.toString.', () => {
+	it('39. Proxied Date.toString outputs the pristine Date.toString.', () => {
 		var test = {d: new Date()};
 		var p = ObservableSlim.create(test, false, function () {});
 
 		expect(p.d.toString()).to.equal(test.d.toString());               
 	});
 	
-	it('39. Proxied Date.getTime outputs the pristine Date.getTime.', () => {
+	it('40. Proxied Date.getTime outputs the pristine Date.getTime.', () => {
 		var test = {d: new Date()};
 		var p = ObservableSlim.create(test, false, function () {});
 		
 		expect(p.d.getTime()).to.equal(test.d.getTime());
 	});
 	
-	it('40. __targetPosition helper is non-enumerable.', () => {
+	it('41. __targetPosition helper is non-enumerable.', () => {
 		
 		var found = false;
 		
@@ -786,7 +821,7 @@ function suite(proxy) {
 		
 	});
 	
-	it('41. Verify __getPath returns correct path (not supported with ES5 polyfill).', () => {
+	it('42. Verify __getPath returns correct path (not supported with ES5 polyfill).', () => {
 		if (global.Proxy === global.NativeProxy) {
 			var data = {"foo":"bar","arr":[{"test":{}}],"test":{"deeper":{}}};
 			var p = ObservableSlim.create(data, false, function(changes) {});
