@@ -4,8 +4,6 @@
 
 Original repo: https://github.com/elliotnb/observable-slim
 
-Version 0.1.5
-
 Licensed under the MIT license:
 
 http://www.opensource.org/licenses/MIT
